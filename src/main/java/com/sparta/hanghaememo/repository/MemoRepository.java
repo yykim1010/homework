@@ -12,5 +12,3 @@ public interface MemoRepository extends JpaRepository<Memo, Long> {
 
     Optional<Memo> findByIdAndPassword(Long id, String password);
 }
-// [[id1, password1, title1] , [id2,passwrod2,title2]]
-// [[id2,passwrod2,title2] ,[id1, password1, title1]]

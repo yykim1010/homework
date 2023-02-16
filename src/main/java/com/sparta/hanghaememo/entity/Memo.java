@@ -30,12 +30,19 @@ public class Memo extends Timestamped {
     @Column(nullable = false)
     private String contents;
 
+    //메모- 매니투원, 유저- 원투매니
 
-    public Memo(MemoRequestDto requestDto) {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "User_id")
+    private User user;
+
+
+    public Memo(MemoRequestDto requestDto, User user) {
         this.title = requestDto.getTitle();
         this.username = requestDto.getUsername();
         this.password = requestDto.getPassword();
         this.contents = requestDto.getContents();
+        this.user = user;
     }
 
     public void update(MemoRequestDto requestDto) {

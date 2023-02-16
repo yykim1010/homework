@@ -18,19 +18,19 @@ public class MemoController {
 
 
     @PostMapping("/api/post")
-    public Memo creatMemo(@RequestBody MemoRequestDto requestDto) {
-        return memoService.createMemo(requestDto);
+    public MemoResponseDto creatMemo(@RequestBody MemoRequestDto requestDto, HttpServletRequest request ) {  //memo, user 바꾸기
+        return memoService.createMemo(requestDto,request);
 
     }
 
     @GetMapping("/api/posts")
-    public List<Memo> getMemos() {
+    public List<MemoResponseDto> getMemos() {
         return memoService.getMemos();//{}[id2,~]]
 
     }
 
     @GetMapping("/api/post/{id}")
-    public Memo getId(@PathVariable Long id) {
+    public MemoResponseDto getId(@PathVariable Long id) {
         return memoService.findId(id);//{}[id2,~]]
 
     }

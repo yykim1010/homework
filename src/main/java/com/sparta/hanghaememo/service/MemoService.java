@@ -37,25 +37,48 @@ public class MemoService {
     }
 
     @Transactional
-    public Memo update(Long id, MemoRequestDto requestDto) {
-        String currentpassword = requestDto.getPassword();
-        Memo memo = memoRepository.findByIdAndPassword(id,currentpassword).orElseThrow(
-                () -> new IllegalArgumentException("아이디가 존재하지 않습니다.")
-        );
-        memo.update(requestDto);
-        return memo;
-    }
+    public MemoResponseDto update(Long id, MemoRequestDto requestDto, HttpServletRequest request) {
 
-    @Transactional
-    public SuccessRequestDto  deleteMemo(Long id, MemoRequestDto requestDto) {
+        String token = jwtUtil.resolveToken(request);
+        Claims claims;
 
-        String currentpassword = requestDto.getPassword();
-        Memo memo = memoRepository.findByIdAndPassword(id,currentpassword).orElseThrow(
-                () -> new IllegalArgumentException("아이디가 존재하지 않습니다.")
-        );
+        // 토큰이 있는 경우에만 관심상품 추가 가능
+        if (token != null) {
+            if (jwtUtil.validateToken(token)) {
+                // 토큰에서 사용자 정보 가져오기
+                claims = jwtUtil.getUserInfoFromToken(token);
+            } else {
+                throw new IllegalArgumentException("Token Error");
+            }
 
-        memoRepository.delete(memo);
-        SuccessRequestDto successRequestDto = new SuccessRequestDto(true);
-        return successRequestDto;
+            // 토큰에서 가져온 사용자 정보를 사용하여 DB 조회
+            User user = userRepository.findByUsername(claims.getSubject()).orElseThrow(
+                    () -> new IllegalArgumentException("사용자가 존재하지 않습니다.")
+            );
+
+            Memo memo = memoRepository.findByIdAndUserId(id, user.getId()).orElseThrow(
+                    () -> new IllegalArgumentException("아이디가 존재하지 않습니다.")
+            );
+            memo.update(requestDto);
+            MemoResponseDto memoResponseDto = new MemoResponseDto(memo);
+            return memoResponseDto;
+        } else {
+            return null;
+        }
     }
 }
+
+//
+//    @Transactional
+//    public SuccessRequestDto deleteMemo(Long id, MemoRequestDto requestDto) {
+//
+//        String currentpassword = requestDto.getPassword();
+//        Memo memo = memoRepository.findByIdAndPassword(id,currentpassword).orElseThrow(
+//                () -> new IllegalArgumentException("아이디가 존재하지 않습니다.")
+//        );
+//
+//        memoRepository.delete(memo);
+//        SuccessRequestDto successRequestDto = new SuccessRequestDto(true);
+//        return successRequestDto;
+//    }
+//}
