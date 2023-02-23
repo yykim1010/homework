@@ -10,5 +10,5 @@ import java.util.Optional;
 public interface MemoRepository extends JpaRepository<Memo, Long> {
     List<Memo> findAllByOrderByCreatedAtDesc();
 
-    Optional<Memo> findByIdAndPassword(Long id, String password);
+    Optional<Memo> findByIdAndUserId(Long id, Long userId);
 }

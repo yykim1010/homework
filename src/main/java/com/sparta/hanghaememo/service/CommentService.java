@@ -1,12 +1,11 @@
 package com.sparta.hanghaememo.service;
 
-
-import com.sparta.hanghaememo.dto.MemoRequestDto;
-import com.sparta.hanghaememo.dto.MemoResponseDto;
-import com.sparta.hanghaememo.dto.UserResponseDto;
+import com.sparta.hanghaememo.dto.*;
+import com.sparta.hanghaememo.entity.Comment;
 import com.sparta.hanghaememo.entity.Memo;
 import com.sparta.hanghaememo.entity.User;
 import com.sparta.hanghaememo.jwt.JwtUtil;
+import com.sparta.hanghaememo.repository.CommentRepository;
 import com.sparta.hanghaememo.repository.MemoRepository;
 import com.sparta.hanghaememo.repository.UserRepository;
 import io.jsonwebtoken.Claims;
@@ -20,8 +19,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class MemoService {
+public class CommentService {
     private final MemoRepository memoRepository;
+    private final CommentRepository commentRepository;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
 
@@ -33,7 +33,7 @@ public class MemoService {
 
     //게시글 등록
     @Transactional
-    public MemoResponseDto createMemo(MemoRequestDto requestDto, HttpServletRequest request) {
+    public CommentResponseDto createComment(Long id, CommentRequestDto requestDto, HttpServletRequest request) {
         String token = jwtUtil.resolveToken(request);
         Claims claims;
 
@@ -51,43 +51,23 @@ public class MemoService {
                     () -> new IllegalArgumentException("사용자가 존재하지 않습니다.")
             );
 
+            //게시글이 아예없을 때 오류 발생
+            Memo memo = memoRepository.findByIdAndUserId(id, user.getId()).orElseThrow(
+                    () -> new IllegalArgumentException("일치하는 id의 게시글이 없습니다")
+            );
+
             // 요청받은 DTO 로 DB에 저장할 객체 만들기
-            Memo memo = memoRepository.saveAndFlush(new Memo(requestDto, user));
-            return new MemoResponseDto(memo);
+            Comment comment = commentRepository.save(new Comment(requestDto, user, memo));
+            return new CommentResponseDto(comment);
 
         } else {
             return null;
         }
     }
 
-    //게시글 상세 조회
-    @Transactional(readOnly = true)
-    public List<MemoResponseDto> getMemos() {
-        ArrayList<MemoResponseDto> list = new ArrayList<>();
-        for (Memo memo : memoRepository.findAllByOrderByCreatedAtDesc()) {
-            MemoResponseDto memoResponseDto = new MemoResponseDto(memo);
-            list.add(memoResponseDto);
-        }
-        //for ( memo 1set(4개변수) : memo set many(memo1 memo2 memo3 memo4 )
-        //4번
-        //첫번째, 제일먼저 생성된 memo 1set 두번째, 그다음 생성된 memo 1set
-        // []->list = [mempresponsedto1,memoresponsedto2,~,~]
-        return list;
-    }
-
-    //선택한 게시글 조회
-    @Transactional
-    public MemoResponseDto findId(Long id) {
-        Memo memo = memoRepository.findById(id).orElseThrow(                  //아이디 존재하는지 확인
-                () -> new IllegalArgumentException("아이디가 존재하지 않습니다.")
-        );
-        MemoResponseDto memoResponseDto = new MemoResponseDto(memo);
-        return memoResponseDto;
-    }
-
     //선택한 게시글 수정
     @Transactional
-    public MemoResponseDto update(Long id, MemoRequestDto requestDto, HttpServletRequest request) {
+    public CommentResponseDto update(Long id, CommentRequestDto requestDto, HttpServletRequest request) {
 
         String token = jwtUtil.resolveToken(request);
         Claims claims;
@@ -105,13 +85,13 @@ public class MemoService {
             User user = userRepository.findByUsername(claims.getSubject()).orElseThrow(
                     () -> new IllegalArgumentException("사용자가 존재하지 않습니다.")
             );
-
-            Memo memo = memoRepository.findByIdAndUserId(id, user.getId()).orElseThrow(
-                    () -> new IllegalArgumentException("아이디가 존재하지 않습니다.")
+            Comment comment = commentRepository.findByIdAndUserId(id, user.getId()).orElseThrow(
+                    () -> new IllegalArgumentException("해당 id를 갖는 코멘트가 없습니다")
             );
-            memo.update(requestDto);
-            MemoResponseDto memoResponseDto = new MemoResponseDto(memo);
-            return memoResponseDto;
+            comment.update(requestDto);
+           CommentResponseDto commentResponseDto = new CommentResponseDto(comment);
+            return commentResponseDto;
+
         } else {
             return null;
         }
@@ -138,13 +118,13 @@ public class MemoService {
                     () -> new IllegalArgumentException("사용자가 존재하지 않습니다.")
             );
 
-            Memo memo = memoRepository.findByIdAndUserId(id, user.getId()).orElseThrow(
+            Comment comment = commentRepository.findByIdAndUserId(id, user.getId()).orElseThrow(
                     () -> new IllegalArgumentException("아이디가 존재하지 않습니다.")
             );
             //requestDto를 받지 않고 지울때
-            memoRepository.deleteById(memo.getId());
+            commentRepository.deleteById(comment.getId());
             //memo.delete(requestDto);
-            UserResponseDto userResponseDto = new UserResponseDto("게시글 삭제 성공", 200);
+            UserResponseDto userResponseDto = new UserResponseDto("댓글 삭제 성공", 200);
             return userResponseDto;
         } else {
             return null;
@@ -152,18 +132,3 @@ public class MemoService {
 
     }
 }
-  // id1 id=2 id=3
-//
-//    @Transactional
-//    public UserResponseDto delete(Long id, UserRequestDto requestDto) {
-//
-//        String currentpassword = requestDto.getPassword(); //12345
-//        Memo memo = memoRepository.findByIdAndPassword(id,currentpassword).orElseThrow(  //아이디 존재하는지 확인
-//                () -> new IllegalArgumentException("아이디가 존재하지 않습니다.")
-//        );
-//
-//        memoRepository.delete(memo);// memo.delete(userRequestDto) 아닌지?
-//        UserRequestDto userRequestDto = new UserRequestDto(true);
-//        return userRequestDto;
-//    }
-//}

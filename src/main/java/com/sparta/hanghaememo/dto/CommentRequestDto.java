@@ -1,11 +1,10 @@
 package com.sparta.hanghaememo.dto;
 
-
 import lombok.Getter;
 
-@Getter
-public class MemoRequestDto {
+import java.util.List;
 
-    private  String title;
+@Getter
+public class CommentRequestDto {
     private String content;
 }
